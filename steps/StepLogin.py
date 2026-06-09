@@ -49,16 +49,6 @@ def verify_dashboard(context):
         print(f"Error occurred: {e}")
 
 
-@then("user should see an error message")
-def verify_error_message(context):
-    wait = WebDriverWait(context.driver, 10)
-    try:
-        message = wait.until(lambda driver: driver.find_element(By.ID, "error-message"))
-        assert message.is_displayed()
-        print("Error message element is displayed.")
-    except Exception as e:
-        print(f"Error occurred: {e}")
-
 
 @when(u'user enters "{username}" and "{password}"')
 def invalid_login(context, username, password):
@@ -73,14 +63,14 @@ def invalid_login(context, username, password):
 
         btn_enter = context.driver.find_element(By.ID, "btn-login")
         btn_enter.click()
-
-
-        message = wait.until( lambda context: context.driver.find_element(By.ID, "error-message").text)
-        assert message == "Senha inválida."
-        print("Error message displayed correctly.")
-
-        context.driver.quit()
     except Exception as e:
         print(f"Error occurred: {e}")
 
 
+@then("user should see an error message")
+def verify_error_message(context):
+    wait = WebDriverWait(context.driver, 10)
+    message = wait.until(lambda driver: driver.find_element(By.ID, "login-error"))
+    wait.until(lambda driver: driver.find_element(By.ID, "login-error").is_displayed())
+    assert message.text == "Senha inválida."
+    
