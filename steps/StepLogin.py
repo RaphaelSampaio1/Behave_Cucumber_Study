@@ -1,9 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from behave import *
 from dotenv import load_dotenv
 import os
+from time import sleep
 
 load_dotenv()
 
@@ -12,33 +14,28 @@ WEBSITE_URL = "https://banco-site-rpa-test.vercel.app/"
 
 @given("user is on the login page")
 def login_page(context):
-    context.driver= webdriver.Chrome()
+    chrome_options = Options()
+    chrome_options.add_argument("--log-level=3")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    context.driver = webdriver.Chrome(options=chrome_options)
     context.driver.get(WEBSITE_URL)
 
 
 
 @when("user enters valid username and password")
-def valid_login(context, username, password):
-    
+def valid_login(context):
+    wait = WebDriverWait(context.driver, 10)
 
     username = os.getenv("USERNAME_BANK")
     password = os.getenv("PASSWORD_BANK")
 
-    username_field= context.driver.find_element(By.ID, "username")
-    password_field= context.driver.find_element(By.ID, "password")
+    username_field = wait.until(lambda driver: driver.find_element(By.ID, "username"))
+    password_field = wait.until(lambda driver: driver.find_element(By.ID, "password"))
 
-    wait = WebDriverWait(context.driver, 10)
-    
-    try:
-        wait.until(lambda driver: username_field.is_displayed())
-        username_field.send_keys(username)
+    username_field.send_keys(username)
+    password_field.send_keys(password)
 
-        wait.until(lambda driver: password_field.is_displayed())
-        password_field.send_keys(password)
-    except Exception as e:
-        print(f"Error occurred: {e}")
-
-    btn_enter= context.driver.find_element(By.ID, "btn-login")
+    btn_enter = context.driver.find_element(By.ID, "btn-login")
     btn_enter.click()
 
 
@@ -50,3 +47,40 @@ def verify_dashboard(context):
         print(  "Login successful, user is on the dashboard.")
     except Exception as e:
         print(f"Error occurred: {e}")
+
+
+@then("user should see an error message")
+def verify_error_message(context):
+    wait = WebDriverWait(context.driver, 10)
+    try:
+        message = wait.until(lambda driver: driver.find_element(By.ID, "error-message"))
+        assert message.is_displayed()
+        print("Error message element is displayed.")
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+
+@when(u'user enters "{username}" and "{password}"')
+def invalid_login(context, username, password):
+    try:
+        wait = WebDriverWait(context.driver, 10)
+
+        username_field = wait.until(lambda driver: driver.find_element(By.ID, "username"))
+        password_field = wait.until(lambda driver: driver.find_element(By.ID, "password"))
+
+        username_field.send_keys(username)
+        password_field.send_keys(password)
+
+        btn_enter = context.driver.find_element(By.ID, "btn-login")
+        btn_enter.click()
+
+
+        message = wait.until( lambda context: context.driver.find_element(By.ID, "error-message").text)
+        assert message == "Senha inválida."
+        print("Error message displayed correctly.")
+
+        context.driver.quit()
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+
