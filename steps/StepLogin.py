@@ -67,6 +67,30 @@ def invalid_login(context, username, password):
         print(f"Error occurred: {e}")
 
 
+
+@when("verify with bellow query params")
+def query_params(context):
+    for r in context.table:
+        username = r["username"]
+        password = r["password"]
+        
+        wait = WebDriverWait(context.driver, 10)
+
+        username_field = wait.until(lambda driver: driver.find_element(By.ID, "username"))
+        password_field = wait.until(lambda driver: driver.find_element(By.ID, "password"))
+
+        username_field.send_keys(username)
+        password_field.send_keys(password)
+
+        btn_enter = context.driver.find_element(By.ID, "btn-login")
+        btn_enter.click()
+
+        dashboard_page = wait.until(lambda driver: driver.find_element(By.TAG_NAME, "h2").text == "Lançamento de Transações")
+
+        assert dashboard_page, f"Login failed for username: {username} and password: {password}"
+
+
+
 @then("user should see an error message")
 def verify_error_message(context):
     wait = WebDriverWait(context.driver, 10)
